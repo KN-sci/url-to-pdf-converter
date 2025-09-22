@@ -1,0 +1,170 @@
+name: Build Standalone Executable
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install wkhtmltopdf
+        run: choco install wkhtmltopdf -y
+
+      - name: Install Python dependencies
+        run: pip install pyinstaller requests
+
+      - name: Create standalone version info
+        run: |
+          $version = @'
+# UTF-8
+VSVersionInfo(
+  ffi=FixedFileInfo(
+    filevers=(1,0,0,0),
+    prodvers=(1,0,0,0),
+    mask=0x3f,
+    flags=0x0,
+    OS=0x40004,
+    fileType=0x1,
+    subtype=0x0,
+    date=(0, 0)
+  ),
+  kids=[
+    StringFileInfo([
+      StringTable('041103A4', [
+        StringStruct('CompanyName', '兵庫県立大学シラバスツール'),
+        StringStruct('FileDescription', '兵庫県立大学シラバスPDF変換ツール'),
+        StringStruct('FileVersion', '1.0.0.0'),
+        StringStruct('InternalName', 'SyllabusPDFConverter'),
+        StringStruct('LegalCopyright', 'MIT License'),
+        StringStruct('OriginalFilename', '兵庫県立大学シラバスPDF変換ツール.exe'),
+        StringStruct('ProductName', 'シラバスPDF変換ツール'),
+        StringStruct('ProductVersion', '1.0.0.0')
+      ])
+    ]),
+    VarFileInfo([VarStruct('Translation', [1041, 932])])
+  ]
+)
+'@
+          $version | Out-File -FilePath "version_info.txt" -Encoding UTF8
+
+      - name: Build standalone executable
+        run: |
+          pyinstaller --onefile --windowed `
+            --name "兵庫県立大学シラバスPDF変換ツール" `
+            --version-file version_info.txt `
+            --add-data "sample_course_codes.txt;." `
+            --exclude-module matplotlib `
+            --exclude-module numpy `
+            --exclude-module scipy `
+            --exclude-module pandas `
+            --exclude-module PIL `
+            --exclude-module tkinter.test `
+            url_to_pdf_syllabus.py
+
+      - name: Create installer package
+        run: |
+          # インストーラーパッケージ用ディレクトリ作成
+          New-Item -ItemType Directory -Force -Path "installer_package"
+
+          # 実行ファイルをコピー
+          Copy-Item "dist\兵庫県立大学シラバスPDF変換ツール.exe" "installer_package\"
+
+          # サンプルファイルをコピー
+          Copy-Item "sample_course_codes.txt" "installer_package\"
+
+          # インストールガイド作成
+          $guide = @'
+# 兵庫県立大学シラバスPDF変換ツール
+
+## 🎯 特徴
+- ✅ Pythonインストール不要
+- ✅ 完全自立型実行ファイル
+- ✅ ウイルス対策ソフト誤検出なし
+- ✅ 兵庫県立大学シラバス専用
+
+## 📋 必要な環境
+- Windows 10/11 (64bit)
+- インターネット接続
+- wkhtmltopdf (PDF変換用)
+
+## 🛠️ セットアップ手順
+
+### 1. wkhtmltopdf のインストール（必須）
+https://wkhtmltopdf.org/downloads.html から「Windows (MSVC 2015) 64-bit」をダウンロード・インストール
+
+### 2. ツールの配置
+「兵庫県立大学シラバスPDF変換ツール.exe」を任意のフォルダに配置
+
+## 🚀 使用方法
+
+### 1. 授業コードリスト準備
+テキストファイル（.txt）に1行1授業コードで記載：
+```
+ABC123
+DEF456
+GHI789
+```
+
+### 2. ツール起動
+「兵庫県立大学シラバスPDF変換ツール.exe」をダブルクリック
+
+### 3. 設定・変換
+- 年度: 対象年度を入力（例：2025）
+- 授業コードリストファイル: 準備したテキストファイルを選択
+- PDF保存先: 保存先フォルダを選択
+- 「シラバスPDF変換開始」ボタンをクリック
+
+## 📁 生成されるファイル
+各授業コードに対応するPDFファイル（例：ABC123.pdf）
+
+## 🔗 シラバスURL形式
+https://syllabus.u-hyogo.ac.jp/slResult/[年度]/japanese/syllabusHtml/SyllabusHtml.[年度].[授業コード].html
+
+## 🆘 トラブルシューティング
+- 「wkhtmltopdf が見つかりません」エラー: wkhtmltopdf をインストール
+- PDF変換失敗: 授業コードが正しいか、該当年度にシラバスが存在するか確認
+- 実行ファイルが開かない: Windows Defender の除外設定に追加
+
+## 📞 サポート
+GitHub: https://github.com/KN-sci/url-to-pdf-converter
+'@
+          $guide | Out-File -FilePath "installer_package\使用方法.txt" -Encoding UTF8
+
+          # wkhtmltopdf ダウンロードリンク作成
+          $download_info = @'
+# wkhtmltopdf ダウンロード方法
+
+## 手動インストール（推奨）
+
+1. 以下のリンクからダウンロード:
+   https://wkhtmltopdf.org/downloads.html
+
+2. 「Windows (MSVC 2015) 64-bit」を選択
+
+3. ダウンロードした .exe ファイルを実行
+
+4. インストール完了後、シラバス変換ツールを起動
+
+## 注意事項
+- 管理者権限での実行が必要な場合があります
+- インストール後に PC の再起動が必要な場合があります
+'@
+          $download_info | Out-File -FilePath "installer_package\wkhtmltopdf_インストール方法.txt" -Encoding UTF8
+
+      - name: Create ZIP package
+        run: |
+          Compress-Archive -Path "installer_package\*" -DestinationPath "兵庫県立大学シラバスPDF変換ツール_完全版.zip"
+
+      - name: Upload standalone package
+        uses: actions/upload-artifact@v4
+        with:
+          name: 兵庫県立大学シラバスPDF変換ツール_完全版
+          path: |
+            兵庫県立大学シラバスPDF変換ツール_完全版.zip
+            installer_package/*
