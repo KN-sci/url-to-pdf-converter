@@ -1,0 +1,4 @@
+weasyprint==61.2
+requests==2.31.0
+beautifulsoup4==4.12.2
+pyinstaller==6.3.0

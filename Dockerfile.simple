@@ -1,0 +1,24 @@
+# シンプルなWindows用実行ファイル作成コンテナ
+FROM python:3.11-slim-bullseye
+
+# 基本パッケージのみインストール
+RUN apt-get update && apt-get install -y \
+    gcc \
+    libc6-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# 基本的なPython パッケージをインストール
+RUN pip install --no-cache-dir \
+    pyinstaller==6.3.0 \
+    requests==2.31.0 \
+    beautifulsoup4==4.12.2
+
+# 作業ディレクトリを設定
+WORKDIR /app
+
+# ビルドスクリプト
+COPY build_simple.py /app/
+COPY url_to_pdf_gui_win11.py /app/
+
+# エントリーポイント
+ENTRYPOINT ["python", "build_simple.py"]

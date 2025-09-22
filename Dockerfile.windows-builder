@@ -1,0 +1,39 @@
+# Windows用実行ファイル作成用コンテナ
+FROM python:3.11-slim
+
+# システムパッケージをインストール
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    libc6-dev \
+    libffi-dev \
+    zlib1g-dev \
+    libjpeg-dev \
+    libpng-dev \
+    libxml2-dev \
+    libxslt1-dev \
+    libcairo2-dev \
+    libpango1.0-dev \
+    libgdk-pixbuf2.0-dev \
+    shared-mime-info \
+    && rm -rf /var/lib/apt/lists/*
+
+# Python パッケージをインストール
+RUN pip install --no-cache-dir \
+    pyinstaller==6.3.0 \
+    weasyprint==61.2 \
+    requests==2.31.0 \
+    beautifulsoup4==4.12.2 \
+    lxml==4.9.3 \
+    pillow==10.1.0 \
+    reportlab==4.0.7
+
+# 作業ディレクトリを設定
+WORKDIR /app
+
+# ビルドスクリプトをコピー
+COPY build_in_container.py /app/
+COPY url_to_pdf_gui_win11.py /app/
+
+# エントリーポイント
+ENTRYPOINT ["python", "build_in_container.py"]

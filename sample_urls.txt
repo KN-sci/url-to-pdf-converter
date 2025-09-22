@@ -1,0 +1,3 @@
+https://example.university.ac.jp/syllabus/SyllabusHtml.2025.ABC123.html
+https://example.university.ac.jp/syllabus/SyllabusHtml.2025.DEF456.html
+https://example.university.ac.jp/syllabus/SyllabusHtml.2025.GHI789.html
