@@ -30,38 +30,23 @@ jobs:
           Copy-Item "sample_course_codes.txt" "installer_package\"
 
       - name: Create documentation
-        shell: pwsh
         run: |
-          $guide = @"
-# 兵庫県立大学シラバスPDF変換ツール
-
-## 特徴
-- Python環境不要の完全自立型実行ファイル
-- 兵庫県立大学シラバス専用
-- 年度指定機能付き
-
-## 必要な環境
-- Windows 10/11 (64bit)
-- wkhtmltopdf
-- インターネット接続
-
-## wkhtmltopdf インストール方法
-1. https://wkhtmltopdf.org/downloads.html にアクセス
-2. Windows (MSVC 2015) 64-bit をダウンロード
-3. ダウンロードしたファイルを実行してインストール
-
-## 使用方法
-1. 授業コードリスト.txt を準備（1行1授業コード）
-2. 兵庫県立大学シラバスPDF変換ツール.exe を起動
-3. 年度を入力
-4. 授業コードリストファイルを選択
-5. PDF保存先を選択
-6. 変換開始ボタンをクリック
-
-## URL形式
-https://syllabus.u-hyogo.ac.jp/slResult/[年度]/japanese/syllabusHtml/SyllabusHtml.[年度].[授業コード].html
-"@
-          $guide | Out-File -FilePath "installer_package\使用方法.txt" -Encoding UTF8
+          echo "# 兵庫県立大学シラバスPDF変換ツール" > installer_package\使用方法.txt
+          echo "" >> installer_package\使用方法.txt
+          echo "## 特徴" >> installer_package\使用方法.txt
+          echo "- Python環境不要の完全自立型実行ファイル" >> installer_package\使用方法.txt
+          echo "- 兵庫県立大学シラバス専用" >> installer_package\使用方法.txt
+          echo "- 年度指定機能付き" >> installer_package\使用方法.txt
+          echo "" >> installer_package\使用方法.txt
+          echo "## 必要な環境" >> installer_package\使用方法.txt
+          echo "- Windows 10/11 (64bit)" >> installer_package\使用方法.txt
+          echo "- wkhtmltopdf" >> installer_package\使用方法.txt
+          echo "- インターネット接続" >> installer_package\使用方法.txt
+          echo "" >> installer_package\使用方法.txt
+          echo "## wkhtmltopdf インストール方法" >> installer_package\使用方法.txt
+          echo "1. https://wkhtmltopdf.org/downloads.html にアクセス" >> installer_package\使用方法.txt
+          echo "2. Windows (MSVC 2015) 64-bit をダウンロード" >> installer_package\使用方法.txt
+          echo "3. ダウンロードしたファイルを実行してインストール" >> installer_package\使用方法.txt
 
       - name: Create ZIP package
         run: |
