@@ -1,4 +1,4 @@
-  name: Build Windows Executable
+name: Build Windows Executable
 
   on:
     push:
@@ -9,24 +9,24 @@
     build-windows:
       runs-on: windows-latest
       steps:
-      - uses: actions/checkout@v4
+        - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
+        - uses: actions/setup-python@v5
+          with:
+            python-version: '3.11'
 
-      - name: Install wkhtmltopdf
-        run: choco install wkhtmltopdf -y
+        - name: Install wkhtmltopdf
+          run: choco install wkhtmltopdf -y
 
-      - name: Install Python dependencies
-        run: pip install pyinstaller requests
+        - name: Install Python dependencies
+          run: pip install pyinstaller requests
 
-      - name: Build executable
-        run: pyinstaller --onefile --windowed --name URLtoPDF_wkhtmltopdf url_to_pdf_gui_win11.py
+        - name: Build executable
+          run: pyinstaller --onefile --windowed --name URLtoPDF_wkhtmltopdf url_to_pdf_gui_win11.py
 
-      - name: Upload executable
-        uses: actions/upload-artifact@v4
-        with:
-          name: URLtoPDF_wkhtmltopdf
-          path: dist/URLtoPDF_wkhtmltopdf.exe
-  EOF
+        - name: Upload executable
+          uses: actions/upload-artifact@v4
+          with:
+            name: URLtoPDF_wkhtmltopdf
+            path: dist/URLtoPDF_wkhtmltopdf.exe
+ 
