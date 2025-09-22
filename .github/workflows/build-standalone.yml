@@ -20,40 +20,10 @@ jobs:
         run: pip install pyinstaller requests
 
       - name: Build standalone executable
-        run: |
-          pyinstaller --onefile --windowed --name "兵庫県立大学シラバスPDF変換ツール" url_to_pdf_syllabus.py
+        run: pyinstaller --onefile --windowed --name SyllabusPDFConverter url_to_pdf_syllabus.py
 
-      - name: Create installer package
-        run: |
-          New-Item -ItemType Directory -Force -Path "installer_package"
-          Copy-Item "dist\兵庫県立大学シラバスPDF変換ツール.exe" "installer_package\"
-          Copy-Item "sample_course_codes.txt" "installer_package\"
-
-      - name: Create documentation
-        run: |
-          echo "# 兵庫県立大学シラバスPDF変換ツール" > installer_package\使用方法.txt
-          echo "" >> installer_package\使用方法.txt
-          echo "## 特徴" >> installer_package\使用方法.txt
-          echo "- Python環境不要の完全自立型実行ファイル" >> installer_package\使用方法.txt
-          echo "- 兵庫県立大学シラバス専用" >> installer_package\使用方法.txt
-          echo "- 年度指定機能付き" >> installer_package\使用方法.txt
-          echo "" >> installer_package\使用方法.txt
-          echo "## 必要な環境" >> installer_package\使用方法.txt
-          echo "- Windows 10/11 (64bit)" >> installer_package\使用方法.txt
-          echo "- wkhtmltopdf" >> installer_package\使用方法.txt
-          echo "- インターネット接続" >> installer_package\使用方法.txt
-          echo "" >> installer_package\使用方法.txt
-          echo "## wkhtmltopdf インストール方法" >> installer_package\使用方法.txt
-          echo "1. https://wkhtmltopdf.org/downloads.html にアクセス" >> installer_package\使用方法.txt
-          echo "2. Windows (MSVC 2015) 64-bit をダウンロード" >> installer_package\使用方法.txt
-          echo "3. ダウンロードしたファイルを実行してインストール" >> installer_package\使用方法.txt
-
-      - name: Create ZIP package
-        run: |
-          Compress-Archive -Path "installer_package\*" -DestinationPath "兵庫県立大学シラバスPDF変換ツール_完全版.zip"
-
-      - name: Upload standalone package
+      - name: Upload executable
         uses: actions/upload-artifact@v4
         with:
-          name: 兵庫県立大学シラバスPDF変換ツール_完全版
-          path: 兵庫県立大学シラバスPDF変換ツール_完全版.zip
+          name: SyllabusPDFConverter
+          path: dist/SyllabusPDFConverter.exe
