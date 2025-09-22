@@ -26,7 +26,14 @@ class SyllabusPDFConverter:
 
         for path in possible_paths:
             try:
-                result = subprocess.run([path, "--version"], capture_output=True, text=True, timeout=5)
+                # Windowsでコマンドプロンプトウィンドウを表示しないように設定
+                startupinfo = None
+                if os.name == 'nt':  # Windows
+                    startupinfo = subprocess.STARTUPINFO()
+                    startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+                    startupinfo.wShowWindow = subprocess.SW_HIDE
+
+                result = subprocess.run([path, "--version"], capture_output=True, text=True, timeout=5, startupinfo=startupinfo)
                 if result.returncode == 0:
                     return path
             except:
@@ -167,7 +174,14 @@ class SyllabusPDFConverter:
                 output_path
             ]
 
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+            # Windowsでコマンドプロンプトウィンドウを表示しないように設定
+            startupinfo = None
+            if os.name == 'nt':  # Windows
+                startupinfo = subprocess.STARTUPINFO()
+                startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+                startupinfo.wShowWindow = subprocess.SW_HIDE
+
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=60, startupinfo=startupinfo)
             return result.returncode == 0
 
         except Exception as e:
