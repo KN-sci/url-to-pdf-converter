@@ -1,0 +1,24 @@
+name: Build EXE
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install deps
+        run: |
+          choco install wkhtmltopdf -y
+          pip install pyinstaller requests
+      - name: Build
+        run: pyinstaller --onefile --windowed --name SyllabusPDF url_to_pdf_syllabus.py
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: SyllabusPDF
+          path: dist/SyllabusPDF.exe
