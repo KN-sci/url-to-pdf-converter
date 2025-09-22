@@ -1,68 +1,68 @@
-name: Build Windows Executable
+  name: Build Windows Executable
 
-on:
-  push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
-  workflow_dispatch:  # 手動実行を許可
+  on:
+    push:
+      branches: [ main, master ]
+    pull_request:
+      branches: [ main, master ]
+    workflow_dispatch:
 
-jobs:
-  build-windows:
-    runs-on: windows-latest
+  jobs:
+    build-windows:
+      runs-on: windows-latest
 
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install pyinstaller weasyprint requests beautifulsoup4 lxml pillow reportlab
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller requests beautifulsoup4 lxml pillow
 
-    - name: Build Windows executable
-      run: |
-        pyinstaller --onefile --windowed --name URLtoPDF_Windows_x64 url_to_pdf_gui_win11.py
+      - name: Build Windows executable
+        run: |
+          pyinstaller --onefile --windowed --name URLtoPDF_Windows_x64 url_to_pdf_gui_win11.py
 
-    - name: Upload executable
-      uses: actions/upload-artifact@v3
-      with:
-        name: URLtoPDF_Windows_x64
-        path: dist/URLtoPDF_Windows_x64.exe
+      - name: Upload executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: URLtoPDF_Windows_x64
+          path: dist/URLtoPDF_Windows_x64.exe
 
-  build-linux:
-    runs-on: ubuntu-latest
+    build-linux:
+      runs-on: ubuntu-latest
 
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
 
-    - name: Install system dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libcairo2-dev libpango1.0-dev libgdk-pixbuf2.0-dev shared-mime-info
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-tk
 
-    - name: Install Python dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install pyinstaller weasyprint requests beautifulsoup4 lxml pillow reportlab
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller requests beautifulsoup4 lxml pillow
 
-    - name: Build Linux executable
-      run: |
-        pyinstaller --onefile --name URLtoPDF_Linux_x64 url_to_pdf_gui_win11.py
+      - name: Build Linux executable
+        run: |
+          pyinstaller --onefile --name URLtoPDF_Linux_x64 url_to_pdf_gui_win11.py
 
-    - name: Upload executable
-      uses: actions/upload-artifact@v3
-      with:
-        name: URLtoPDF_Linux_x64
-        path: dist/URLtoPDF_Linux_x64
+      - name: Upload executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: URLtoPDF_Linux_x64
+          path: dist/URLtoPDF_Linux_x64
