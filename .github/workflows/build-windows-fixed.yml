@@ -1,0 +1,223 @@
+  name: Build Windows PDF Converter
+
+  on:
+    workflow_dispatch:
+
+  jobs:
+    build-windows:
+      runs-on: windows-latest
+
+      steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install system dependencies
+        run: |
+          # Chocolatey経由でwkhtmltopdfをインストール
+          choco install wkhtmltopdf -y
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+          pip install pdfkit
+          pip install requests beautifulsoup4 lxml pillow
+          pip install weasyprint --no-deps
+          pip install cairocffi cffi cssselect2 tinycss2 fonttools html5lib pyphen
+
+      - name: Create simple PDF converter
+        run: |
+          $content = @"
+  import tkinter as tk
+  from tkinter import ttk, filedialog, messagebox, scrolledtext
+  import threading
+  import os
+  import requests
+  from urllib.parse import urlparse
+
+  try:
+      import pdfkit
+      PDF_AVAILABLE = True
+      print("pdfkit loaded successfully")
+  except ImportError:
+      print("pdfkit not available, using HTML download")
+      PDF_AVAILABLE = False
+
+  class URLtoPDFConverter:
+      def __init__(self, root):
+          self.root = root
+          self.root.title("URL to PDF Converter - Windows")
+          self.root.geometry("700x500")
+          self.converting = False
+          self.create_widgets()
+
+      def create_widgets(self):
+          main_frame = ttk.Frame(self.root, padding="10")
+          main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+
+          # Title
+          ttk.Label(main_frame, text="URL to PDF Converter",
+                   font=("Arial", 14, "bold")).grid(row=0, column=0, columnspan=3, pady=(0, 20))
+
+          status_text = "PDF conversion available" if PDF_AVAILABLE else "HTML download mode (wkhtmltopdf required
+  for PDF)"
+          ttk.Label(main_frame, text=status_text).grid(row=1, column=0, columnspan=3, pady=(0, 10))
+
+          # File selection
+          ttk.Label(main_frame, text="URLリストファイル:").grid(row=2, column=0, sticky=tk.W, pady=5)
+          self.file_path_var = tk.StringVar()
+          ttk.Entry(main_frame, textvariable=self.file_path_var, width=50).grid(row=2, column=1, padx=5, pady=5)
+          ttk.Button(main_frame, text="参照", command=self.select_file).grid(row=2, column=2, pady=5)
+
+          # Output directory
+          ttk.Label(main_frame, text="出力ディレクトリ:").grid(row=3, column=0, sticky=tk.W, pady=5)
+          self.output_dir_var = tk.StringVar()
+          ttk.Entry(main_frame, textvariable=self.output_dir_var, width=50).grid(row=3, column=1, padx=5, pady=5)
+          ttk.Button(main_frame, text="参照", command=self.select_output_dir).grid(row=3, column=2, pady=5)
+
+          # Convert button
+          self.convert_button = ttk.Button(main_frame, text="変換開始", command=self.start_conversion)
+          self.convert_button.grid(row=4, column=0, columnspan=3, pady=20)
+
+          # Log
+          ttk.Label(main_frame, text="ログ:").grid(row=5, column=0, sticky=tk.W)
+          self.log_text = scrolledtext.ScrolledText(main_frame, height=15, width=80)
+          self.log_text.grid(row=6, column=0, columnspan=3, sticky=(tk.W, tk.E, tk.N, tk.S), pady=5)
+
+          # Grid weights
+          self.root.columnconfigure(0, weight=1)
+          self.root.rowconfigure(0, weight=1)
+          main_frame.columnconfigure(1, weight=1)
+          main_frame.rowconfigure(6, weight=1)
+
+      def select_file(self):
+          filename = filedialog.askopenfilename(
+              title="URLリストファイルを選択",
+              filetypes=[("テキストファイル", "*.txt"), ("すべてのファイル", "*.*")]
+          )
+          if filename:
+              self.file_path_var.set(filename)
+              if not self.output_dir_var.get():
+                  self.output_dir_var.set(os.path.dirname(filename))
+
+      def select_output_dir(self):
+          dirname = filedialog.askdirectory(title="出力ディレクトリを選択")
+          if dirname:
+              self.output_dir_var.set(dirname)
+
+      def log(self, message):
+          self.log_text.insert(tk.END, message + "\n")
+          self.log_text.see(tk.END)
+          self.root.update_idletasks()
+
+      def convert_url(self, url, output_path):
+          try:
+              if PDF_AVAILABLE:
+                  options = {
+                      'page-size': 'A4',
+                      'margin-top': '0.75in',
+                      'margin-right': '0.75in',
+                      'margin-bottom': '0.75in',
+                      'margin-left': '0.75in',
+                      'encoding': "UTF-8"
+                  }
+                  pdfkit.from_url(url, output_path, options=options)
+                  return True
+              else:
+                  # Fallback: download as HTML
+                  headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+                  response = requests.get(url, headers=headers, timeout=30)
+                  response.raise_for_status()
+
+                  html_output = output_path.replace('.pdf', '.html')
+                  with open(html_output, 'w', encoding='utf-8') as f:
+                      f.write(response.text)
+                  return True
+          except Exception as e:
+              self.log(f"    エラー: {str(e)}")
+              return False
+
+      def start_conversion(self):
+          if not self.file_path_var.get() or not self.output_dir_var.get():
+              messagebox.showerror("エラー", "ファイルとディレクトリを選択してください")
+              return
+
+          self.convert_button.config(state=tk.DISABLED)
+          self.converting = True
+          threading.Thread(target=self.conversion_worker, daemon=True).start()
+
+      def conversion_worker(self):
+          try:
+              os.makedirs(self.output_dir_var.get(), exist_ok=True)
+
+              with open(self.file_path_var.get(), 'r', encoding='utf-8') as file:
+                  urls = [line.strip() for line in file.readlines() if line.strip()]
+
+              self.log(f"変換開始: {len(urls)}個のURL")
+              success_count = 0
+
+              for i, url in enumerate(urls, 1):
+                  if not self.converting:
+                      break
+
+                  try:
+                      parsed_url = urlparse(url)
+                      filename = os.path.basename(parsed_url.path) or f"download_{i}"
+                      if PDF_AVAILABLE and not filename.endswith('.pdf'):
+                          filename += '.pdf'
+                      elif not PDF_AVAILABLE and not filename.endswith('.html'):
+                          filename += '.html'
+
+                      output_path = os.path.join(self.output_dir_var.get(), filename)
+
+                      self.log(f"[{i}/{len(urls)}] 変換中: {url}")
+
+                      success = self.convert_url(url, output_path)
+                      if success:
+                          self.log(f"    ? 成功: {filename}")
+                          success_count += 1
+                      else:
+                          self.log(f"    ? 失敗")
+
+                  except Exception as e:
+                      self.log(f"[{i}/{len(urls)}] エラー: {str(e)}")
+
+              self.log(f"完了: {success_count}/{len(urls)} 件を処理")
+              messagebox.showinfo("完了", f"{success_count}/{len(urls)} 件を処理しました")
+
+          except Exception as e:
+              self.log(f"エラー: {str(e)}")
+              messagebox.showerror("エラー", str(e))
+
+          finally:
+              self.convert_button.config(state=tk.NORMAL)
+              self.converting = False
+
+  def main():
+      root = tk.Tk()
+      app = URLtoPDFConverter(root)
+      root.mainloop()
+
+  if __name__ == "__main__":
+      main()
+  "@
+
+          $content | Out-File -FilePath "url_to_pdf_windows.py" -Encoding UTF8
+
+      - name: Build Windows executable
+        run: |
+          pyinstaller --onefile --windowed --name URLtoPDF_Windows_Fixed --hidden-import pdfkit
+  url_to_pdf_windows.py
+
+      - name: Upload executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: URLtoPDF_Windows_Fixed
+          path: dist/URLtoPDF_Windows_Fixed.exe
+  EOF
+
